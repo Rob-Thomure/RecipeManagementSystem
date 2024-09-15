@@ -1,28 +1,48 @@
 package recipes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
+@Entity
 public class Recipe {
 
     @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Id
+    @GeneratedValue
     private long id;
 
+    @NotBlank
     private String name;
-    private String description;
-    private String[] ingredients;
-    private String[] directions;
 
-    private static long idIndex;
+    @NotBlank
+    private String description;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
+    @Size(min = 1)
+    @NotNull
+    private List<String> ingredients;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
+    @Size(min = 1)
+    @NotNull
+    private List<String> directions;
 
     public Recipe() {
-        this.id = ++idIndex;
     }
 
-    public Recipe(String name, String description, String[] ingredients, String[] directions) {
-        this.id = ++idIndex;
+    public Recipe(String name, String description, List<String> ingredients, List<String> directions) {
         this.name = name;
         this.description = description;
         this.ingredients = ingredients;
@@ -35,14 +55,6 @@ public class Recipe {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public static long getIdIndex() {
-        return idIndex;
-    }
-
-    public static void setIdIndex(long idIndex) {
-        Recipe.idIndex = idIndex;
     }
 
     public String getName() {
@@ -61,19 +73,19 @@ public class Recipe {
         this.description = description;
     }
 
-    public String[] getIngredients() {
+    public List<String> getIngredients() {
         return ingredients;
     }
 
-    public void setIngredients(String[] ingredients) {
+    public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
     }
 
-    public String[] getDirections() {
+    public List<String> getDirections() {
         return directions;
     }
 
-    public void setDirections(String[] directions) {
+    public void setDirections(List<String> directions) {
         this.directions = directions;
     }
 
@@ -82,14 +94,11 @@ public class Recipe {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Recipe recipe = (Recipe) o;
-        return id == recipe.id && Objects.equals(name, recipe.name) &&
-                Objects.equals(description, recipe.description) &&
-                Objects.deepEquals(ingredients, recipe.ingredients) &&
-                Objects.deepEquals(directions, recipe.directions);
+        return id == recipe.id && Objects.equals(name, recipe.name) && Objects.equals(description, recipe.description) && Objects.equals(ingredients, recipe.ingredients) && Objects.equals(directions, recipe.directions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, Arrays.hashCode(ingredients), Arrays.hashCode(directions));
+        return Objects.hash(id, name, description, ingredients, directions);
     }
 }
