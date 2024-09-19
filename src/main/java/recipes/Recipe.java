@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,6 +26,12 @@ public class Recipe {
     private String name;
 
     @NotBlank
+    private String category;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime date;
+
+    @NotBlank
     private String description;
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -39,10 +46,13 @@ public class Recipe {
     @NotNull
     private List<String> directions;
 
+
+
     public Recipe() {
     }
 
-    public Recipe(String name, String description, List<String> ingredients, List<String> directions) {
+    public Recipe(String name, String category, LocalDateTime date, String description,
+                  List<String> ingredients, List<String> directions) {
         this.name = name;
         this.description = description;
         this.ingredients = ingredients;
@@ -87,6 +97,22 @@ public class Recipe {
 
     public void setDirections(List<String> directions) {
         this.directions = directions;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 
     @Override
