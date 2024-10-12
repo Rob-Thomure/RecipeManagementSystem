@@ -46,7 +46,8 @@ public class Recipe {
     @NotNull
     private List<String> directions;
 
-
+    @JsonIgnore
+    private String createdBy;
 
     public Recipe() {
     }
@@ -115,6 +116,14 @@ public class Recipe {
         this.date = date;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -126,5 +135,18 @@ public class Recipe {
     @Override
     public int hashCode() {
         return Objects.hash(id, name, description, ingredients, directions);
+    }
+
+    @Override
+    public String toString() {
+        return "Recipe{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", category='" + category + '\'' +
+                ", date=" + date +
+                ", description='" + description + '\'' +
+                ", ingredients=" + ingredients +
+                ", directions=" + directions +
+                '}';
     }
 }

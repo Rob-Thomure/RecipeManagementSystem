@@ -1,7 +1,11 @@
 package recipes;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -10,13 +14,23 @@ import java.util.*;
 @RestController
 public class RecipesController {
     private final RecipesRepository recipesRepository;
-    public RecipesController(RecipesRepository recipesRepository) {
+    //private final AppUserService appUserService;
+    private final AppUserRepository appUserRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public RecipesController(RecipesRepository recipesRepository, AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
         this.recipesRepository = recipesRepository;
+        //this.appUserService = appUserService;
+        this.appUserRepository = appUserRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping(path = "/api/recipe/new")
-    public ResponseEntity<Map<String, Long>> saveRecipe(@Valid @RequestBody Recipe recipe) {
+    public ResponseEntity<Map<String, Long>> saveRecipe(@AuthenticationPrincipal UserDetails userDetails,
+                                                        @Valid @RequestBody Recipe recipe) {
         recipe.setDate(LocalDateTime.now());
+        String createdBy = userDetails.getUsername();
+        recipe.setCreatedBy(createdBy);
         recipesRepository.save(recipe);
         Map<String, Long> idResponse = new HashMap<>();
         idResponse.put("id", recipe.getId());
@@ -24,12 +38,19 @@ public class RecipesController {
     }
 
     @PutMapping(path = "api/recipe/{id}")
-    public ResponseEntity<Map<String, Long>> updateRecipe(@PathVariable("id") long id, @Valid @RequestBody Recipe recipe) {
-        recipesRepository.findById(id).orElseThrow(NoSuchElementException::new);
-        recipe.setId(id);
-        recipe.setDate(LocalDateTime.now());
-        recipesRepository.save(recipe);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Map<String, Long>> updateRecipe(@AuthenticationPrincipal UserDetails userDetails,
+                                                          @PathVariable("id") long id,
+                                                          @Valid @RequestBody Recipe recipe) {
+        Recipe currentRecipe = recipesRepository.findById(id).orElseThrow(NoSuchElementException::new);
+        if (userDetails.getUsername().matches(currentRecipe.getCreatedBy())) {
+            recipe.setId(id);
+            recipe.setDate(LocalDateTime.now());
+            recipe.setCreatedBy(userDetails.getUsername());
+            recipesRepository.save(recipe);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.status(HttpStatusCode.valueOf(403)).build();
+        }
     }
 
     @GetMapping(path = "/api/recipe/search/")
@@ -65,17 +86,45 @@ public class RecipesController {
     }
 
     @DeleteMapping(path = "/api/recipe/{id}")
-    public ResponseEntity<Recipe> deleteRecipe(@PathVariable("id") long id) {
-        if (recipesRepository.existsById(id))
+    public ResponseEntity<Recipe> deleteRecipe(@AuthenticationPrincipal UserDetails userDetails,
+                                               @PathVariable("id") long id) {
+        Recipe recipe = recipesRepository.findById(id).orElseThrow(NoSuchElementException::new);
+        if (recipe.getCreatedBy().matches(userDetails.getUsername())) {
             return deleteRecipeInRepository(id);
+        }
         else
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatusCode.valueOf(403)).build();
     }
 
     private ResponseEntity<Recipe> deleteRecipeInRepository(long id) {
         recipesRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping(path = "/api/register")
+    public ResponseEntity<AppUser> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest) {
+        if (userDoesNotExist(registrationRequest)
+                && AppUser.isValidEmail(registrationRequest.email())
+                && AppUser.isValidPassword(registrationRequest.password())) {
+            AppUser appUser = new AppUser();
+            appUser.setUsername(registrationRequest.email());
+            appUser.setPassword(passwordEncoder.encode(registrationRequest.password()));
+            appUser.setAuthority(registrationRequest.email());
+            appUserRepository.save(appUser);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    private boolean userDoesNotExist(RegistrationRequest registrationRequest) {
+        return !appUserRepository.existsAppUserByUsername(registrationRequest.email());
+    }
+
+
+
+
+
 
 
 }
