@@ -14,13 +14,11 @@ import java.util.*;
 @RestController
 public class RecipesController {
     private final RecipesRepository recipesRepository;
-    //private final AppUserService appUserService;
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     public RecipesController(RecipesRepository recipesRepository, AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
         this.recipesRepository = recipesRepository;
-        //this.appUserService = appUserService;
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
     }
