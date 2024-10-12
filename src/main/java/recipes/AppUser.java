@@ -61,7 +61,7 @@ public class AppUser {
     }
 
     public static boolean isValidPassword(String email) {
-        return email.length() >= 8;
+        return email.length() >= 8 && !email.isBlank();
     }
 
     public String getAuthority() {
